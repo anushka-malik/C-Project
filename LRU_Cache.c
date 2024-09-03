@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <sys/resource.h>
 
 #define KEY_SIZE 32
 #define VALUE_SIZE 256
@@ -154,6 +156,11 @@ void free_memory(Cache *cache)
 // function to test the working of the logic and implementation.
 void test()
 {
+    clock_t start,end;
+    start=clock();
+    struct rusage usage_start, usage_end;
+    getrusage(RUSAGE_SELF,&usage_start);
+
     Cache cache;
     init(&cache);
     add_to_cache(&cache,"1","a");
@@ -168,6 +175,15 @@ void test()
    }
     add_to_cache(&cache,"5","e");
     print_cache(&cache);
+
+    end=clock();
+    double diff= (double)(end-start)/(CLOCKS_PER_SEC);
+
+    printf("\nTime utilized is: %f seconds\n",diff);
+
+    getrusage(RUSAGE_SELF,&usage_end);
+    long mem_used=usage_end.ru_maxrss -  usage_start.ru_maxrss;
+    printf("Memory Used: %ld KB \n",mem_used);
 
     free_memory(&cache);
 

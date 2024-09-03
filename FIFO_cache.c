@@ -223,7 +223,7 @@ void print_cache(Cache *cache)
 // function to test the working of cache 
 void test_cache()
 {
-     clock_t start,end;
+    clock_t start,end;
     start=clock();
     struct rusage usage_start, usage_end;
     getrusage(RUSAGE_SELF,&usage_start);
