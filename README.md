@@ -8,5 +8,12 @@ Since caches are finite in size, they cannot accommodate all the data that an ap
 ## FIFO(First-In-First-Out) cache replacement algorithm
 FIFO is a cache replacement policy where the oldest items are removed first when the cache reaches its maximum capacity. Imagine the cache as a queue, and the first item that was added to the cache is the first one to be evicted when the cache is full. This strategy ensures that the data that has been in the cache the longest is replaced, making room for new or more frequently accessed data.It eliminates starvation , thus giving chance to the new elements.
 
+## LRU(Least Recently Used) cache replacement algorithm
+A Least Recently Used (LRU) Cache organizes items in order of use, allowing you to quickly identify which item hasn't been used for the longest amount of time.The Least Recently Used (LRU) cache is a popular caching strategy that discards the least recently used items first to make room for new elements when the cache is full. It organizes items in the order of their use, allowing us to easily identify items that have not been used for a long time. This strategy is useful for optimizing the use of limited cache space and improving the performance of caching systems.
 
 
+|      Costs     |  Worst Case |
+| -------------  | ------------|
+| Insert an item |      O(1)   |
+| Access an item |      O(1)   |
+|      Space     |      O(N)   |
