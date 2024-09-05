@@ -1,7 +1,9 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <sys/resource.h>
+
 
 #define KEY_SIZE 32
 #define VALUE_SIZE 256
@@ -171,6 +173,13 @@ const char *retrieve_from_cache(Cache *cache, const char *key) {
     }
     return NULL;
 }
+void trim_newline(char *str) {
+    char *pos;
+    if ((pos = strchr(str, '\n')) != NULL) {
+        *pos = '\0';
+    }
+}
+
 
 // Function to print the elements of the cache placed in the most recently used (MRU) order
 void print_cache(Cache *cache) {
@@ -214,27 +223,79 @@ void free_memory(Cache *cache) {
 void test() {
     Cache cache;
     init(&cache);
-    add_to_cache(&cache, "1", "a");
-    add_to_cache(&cache, "2", "b");
-    add_to_cache(&cache, "3", "c");
-    add_to_cache(&cache, "4", "d");
-    print_cache(&cache);
+    clock_t start,end;
+    start=clock();
+    struct rusage usage_start,usage_end;
+    getrusage(RUSAGE_SELF,&usage_start);
+    // add_to_cache(&cache, "1", "a");
+    // add_to_cache(&cache, "2", "b");
+    // add_to_cache(&cache, "3", "c");
+    // add_to_cache(&cache, "4", "d");
+    // print_cache(&cache);
 
-    const char *str = retrieve_from_cache(&cache, "2");
-    if (str) {
-        printf("Retrieved key '1': %s\n", str);
-    } else {
-        printf("Key '1' not found\n");
-    }
-    print_cache(&cache);
+    // const char *str = retrieve_from_cache(&cache, "2");
+    // if (str) {
+    //     printf("Retrieved key '1': %s\n", str);
+    // } else {
+    //     printf("Key '1' not found\n");
+    // }
+    // print_cache(&cache);
 
-    const char *str2 = retrieve_from_cache(&cache, "3");
-    if (str2) {
-        printf("Retrieved key '4': %s\n", str2);
-    } else {
-        printf("Key '4' not found\n");
+    // const char *str2 = retrieve_from_cache(&cache, "3");
+    // if (str2) {
+    //     printf("Retrieved key '4': %s\n", str2);
+    // } else {
+    //     printf("Key '4' not found\n");
+    // }
+
+    int lo = 0;
+    int hi = 7;
+    int miss = 0;
+    int hit = 0;
+
+    for (int i = 0; i < 3; i++) {
+        char k[KEY_SIZE];
+        int el = (rand() % (hi - lo + 1)) + lo;
+        snprintf(k, KEY_SIZE, "%d", el);
+        trim_newline(k);
+        char v[VALUE_SIZE];
+        fgets(v, VALUE_SIZE, stdin);
+        trim_newline(v);
+        add_to_cache(&cache, k, v);
     }
-    print_cache(&cache);
+
+    for (int i = 0; i < 12; i++) {
+        int key = (rand() % (hi - lo + 1)) + lo;
+        char s[KEY_SIZE];
+        snprintf(s, KEY_SIZE, "%d", key);
+        const char *value = retrieve_from_cache(&cache, s);
+        if (value) {
+            hit++;
+        } else {
+            miss++;
+        }
+    }
+
+    double hit_ratio = (double)hit / 12 * 100;
+    double miss_ratio = 100.0 - hit_ratio;
+
+    end = clock();
+    double diff = (double)(end - start) / CLOCKS_PER_SEC;
+
+    getrusage(RUSAGE_SELF, &usage_end);
+    long mem_used = usage_end.ru_maxrss - usage_start.ru_maxrss;
+
+    printf("\nCache Metrics:\n");
+    printf("-------------------------------------------------\n");
+    printf("| %-30s | %d                    |\n", "Total number of cache hits", hit);
+    printf("| %-30s | %d                    |\n", "Total number of cache misses", miss);
+    printf("| %-30s | %.2f%%                |\n", "Hit ratio", hit_ratio);
+    printf("| %-30s | %.2f%%                |\n", "Miss ratio", miss_ratio);
+    printf("| %-30s | %f seconds         |\n", "Time utilized", diff);
+    printf("| %-30s | %ld KB             |\n", "Memory Used", mem_used);
+    printf("-------------------------------------------------\n");
+
+    // print_cache(&cache);
 
     free_memory(&cache);
 }

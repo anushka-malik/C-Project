@@ -230,39 +230,66 @@ void test_cache()
 
     Cache cache;
     init(&cache);
+
+    int lo=0;
+    int hi=7;
+    int miss=0;
+    int hit=0;
+
     for(int i=0;i<3;i++)
     {
          char k[KEY_SIZE];
-         fgets(k,KEY_SIZE,stdin);
-         trim_newline(k);
+        int el=(rand()%(hi-lo+1))+lo;
+        snprintf(k, KEY_SIZE, "%d", el);
+        trim_newline(k);
          char v[VALUE_SIZE];
          fgets(v,VALUE_SIZE,stdin);
          trim_newline(v);
          add_to_cache(&cache,k,v);
     }
-    print_cache(&cache);
-    char s[KEY_SIZE];
-    fgets(s,KEY_SIZE,stdin);
-    trim_newline(s);
-    const char *value = retrieve_from_cache(&cache, s);
-    if (value) 
+  
+    for(int i=0;i<12;i++)
     {
-        printf("Value for key:%s is %s \n",s,value);
+        int key=(rand()%(hi-lo+1))+lo;
+        char s[KEY_SIZE];
+	snprintf(s,KEY_SIZE,"%d",key);
+        const char *value = retrieve_from_cache(&cache, s);
+        if (value) 
+        {
+            // printf("Value for key:%s is %s \n",s,value);
+            hit++;
+        }
+        else
+        {
+            // printf("Key %s not found in cache.\n",s);
+            miss++;
+        }
     }
-    else
-    {
-        printf("Key %s not found in cache.\n",s);
-    }
+    double hit_ratio=0.0;
+    double miss_ratio=0.0;
+    hit_ratio=(double)hit/12*100;
+    miss_ratio=(100.0-hit_ratio);
 
     end=clock();
     double diff= (double)(end-start)/(CLOCKS_PER_SEC);
 
-    printf("\nTime utilized is: %f seconds\n",diff);
-
+    
     getrusage(RUSAGE_SELF,&usage_end);
     long mem_used=usage_end.ru_maxrss -  usage_start.ru_maxrss;
-    printf("Memory Used: %ld KB \n",mem_used);
+    
+     // Print metrics in tabular format
+    printf("\nCache Metrics:\n");
+    printf("-------------------------------------------------\n");
+    printf("| %-30s | %d                    |\n", "Total number of cache hits", hit);
+    printf("| %-30s | %d                    |\n", "Total number of cache miss", miss);
+    printf("| %-30s | %.2f%%                |\n", "Hit ratio", hit_ratio);
+    printf("| %-30s | %.2f%%                |\n", "Miss ratio", miss_ratio);
+    printf("| %-30s | %f seconds         |\n", "Time utilized", diff);
+    printf("| %-30s | %ld KB             |\n", "Memory Used", mem_used);
+    printf("-------------------------------------------------\n");
 
+
+    
     free_cache(&cache);
 
 }
