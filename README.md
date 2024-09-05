@@ -16,6 +16,14 @@ Since caches are finite in size, they cannot accommodate all the data that a pro
 + **Methods** -insertion and retrieval.
 + **Memory deallocation** function to free up the heap memory.
 
+#### Complexity Analysis
+
+|      Costs     |  Worst Case |
+| -------------  | ------------|
+| Insert an item |      O(1)   |
+| Access an item |      O(1)   |
+|      Space     |      O(N)   |
+
 ## FIFO(First-In-First-Out) cache replacement algorithm
 
 ### Overview
@@ -28,6 +36,19 @@ FIFO is a cache replacement policy where the oldest items are removed first when
 - Uses queue(implemented using linked list,i.e.pointers) to maintain the order of insertion.
 - It calculates the CPU time and memory utilization.
 
+#### Metrics evaluation
+```
+Cache Metrics:
+----------------------------------------------------------
+| Total number of cache hits     | 180                    |
+| Total number of cache miss     | 320                    |
+| Hit ratio                      | 36.00%                 |
+| Miss ratio                     | 64.00%                 |
+| Time utilized                  | 0.001485 seconds       |
+| Memory Used                    | 0 KB                   |
+----------------------------------------------------------
+```
+
 ## LRU(Least Recently Used) cache replacement algorithm
 
 ### Overview
@@ -39,13 +60,34 @@ The Least Recently Used (LRU) cache is a popular caching strategy that discards 
 - It encompasses the use of a doubly-linked list (implemented using pointers) to keep track of least used item for eviction when cache is full.
 - Metric evaluation -Hit ratio, Miss ratio, CPU time and memory.
 
+#### Metrics evaluation
+```
+Cache Metrics:
+---------------------------------------------------------
+| Total number of cache hits     | 485                    |
+| Total number of cache misses   | 515                    |
+| Hit ratio                      | 48.50%                 |
+| Miss ratio                     | 51.50%                 |
+| Time utilized                  | 0.001795 seconds       |
+| Memory Used                    | 0 KB                   |
+--------------------------------------------------------
+
+```
+
 ## MRU(Most-Recently-Used) Cache replacement algorithm
 
 ### Overview
 MRU focuses on removing the most recently used items when the cache reaches its capacity. This approach can be particularly useful in scenarios where recently accessed items are less likely to be needed again soon.Examples of such scenarios include certain types of web caches or buffer caches where recent data is not necessarily the most relevant for future operations. 
+#### Metrics evaluation
+```
+Cache Metrics:
+---------------------------------------------------------
+| Total number of cache hits     | 485                    |
+| Total number of cache misses   | 515                    |
+| Hit ratio                      | 48.50%                 |
+| Miss ratio                     | 51.50%                 |
+| Time utilized                  | 0.000568 seconds       |
+| Memory Used                    | 0 KB                   |
+---------------------------------------------------------
+ ```
 
-|      Costs     |  Worst Case |
-| -------------  | ------------|
-| Insert an item |      O(1)   |
-| Access an item |      O(1)   |
-|      Space     |      O(N)   |
