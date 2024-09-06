@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include <sys/resource.h>
-
+#include "cache.h"
 
 #define KEY_SIZE 32
 #define VALUE_SIZE 256
@@ -36,15 +36,6 @@ void init(Cache *cache) {
     cache->head = NULL;
     cache->tail = NULL;
     cache->size = 0;
-}
-
-// DJB2 Hash function to ensure uniform distribution & reduce collision
-unsigned int hash(const char *key) {
-    unsigned int hash = 0;
-    while (*key) {
-        hash = (hash << 5) + hash + *key++;
-    }
-    return hash % CACHE_SIZE;
 }
 
 // Function to remove an entry from the linked list
@@ -175,49 +166,6 @@ const char *retrieve_from_cache(Cache *cache, const char *key) {
     }
     return NULL;
 }
-void trim_newline(char *str) {
-    char *pos;
-    if ((pos = strchr(str, '\n')) != NULL) {
-        *pos = '\0';
-    }
-}
-
-// function which calcluates encrypted key-value pairs using Caesar Cipher encryption algorithm 
-void custom_encrypt(char *str)
-{
-   char ch;
-   for(int i=0;str[i]!='\0';i++)
-   {
-      ch=str[i];
-      if(ch>='a'  && ch<='z')
-      {
-          ch=ch+ENDEC_KEY;
-          if(ch>'z')
-          {
-            ch=ch-'z'+'a'-1;
-          }
-          str[i]=ch;
-      }
-      else if(ch>='A' && ch<='Z')
-      {
-          ch=ch+ENDEC_KEY;
-          if(ch>'Z')
-          {
-            ch=ch-'Z'+'A'-1;
-          }
-          str[i]=ch;
-      }
-      else
-      {
-        ch=ch+ENDEC_KEY;
-        if(ch>'9')
-        {
-            ch=ch-'9'+'0'-1;
-        }
-        str[i]=ch;
-      }
-   }
-}
 
 // Encrypt funciton which encrypts  each entry in the cache 
 void encrypt(Cache *cache)
@@ -229,42 +177,6 @@ void encrypt(Cache *cache)
     custom_encrypt(temp->value);
     temp=temp->next;
   }
-}
-// function which calcluates decrypted key-value pairs using Caesar Cipher decryption algorithm 
-void custom_decrypt(char *str)
-{
-   char ch;
-   for(int i=0;str[i]!='\0';i++)
-   {
-      ch=str[i];
-      if(ch>='a'  && ch<='z')
-      {
-          ch=ch-ENDEC_KEY;
-          if(ch<'a')
-          {
-            ch=ch-'a'+'z'+1;
-          }
-          str[i]=ch;
-      }
-      else if(ch>='A' && ch<='Z')
-      {
-          ch=ch-ENDEC_KEY;
-          if(ch<'A')
-          {
-            ch=ch-'A'+'Z'+1;
-          }
-          str[i]=ch;
-      }
-      else
-      {
-        ch=ch-ENDEC_KEY;
-        if(ch<'0')
-        {
-            ch=ch-'0'+'9'+1;
-        }
-        str[i]=ch;
-      }
-   }
 }
 
 // Decrypt funciton which decrypts  each entry in the cache 
@@ -366,26 +278,15 @@ void test() {
     printf("After decryption: \n");
     print_func(&cache);
   
-    double hit_ratio = (double)hit / 1000 * 100;
-    double miss_ratio = 100.0 - hit_ratio;
-
     end = clock();
     double diff = (double)(end - start) / CLOCKS_PER_SEC;
-
+    metric(hit,miss);
     getrusage(RUSAGE_SELF, &usage_end);
     long mem_used = usage_end.ru_maxrss - usage_start.ru_maxrss;
 
-    printf("\nCache Metrics:\n");
-    printf("-------------------------------------------------\n");
-    printf("| %-30s | %d                    |\n", "Total number of cache hits", hit);
-    printf("| %-30s | %d                    |\n", "Total number of cache misses", miss);
-    printf("| %-30s | %.2f%%                |\n", "Hit ratio", hit_ratio);
-    printf("| %-30s | %.2f%%                |\n", "Miss ratio", miss_ratio);
     printf("| %-30s | %f seconds         |\n", "Time utilized", diff);
     printf("| %-30s | %ld KB             |\n", "Memory Used", mem_used);
     printf("-------------------------------------------------\n");
-
-    // print_cache(&cache);
 
     free_memory(&cache);
 }

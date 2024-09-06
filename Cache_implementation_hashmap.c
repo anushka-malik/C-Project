@@ -3,6 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include <sys/resource.h>
+#include "cache.h"
 
 #define CACHE_SIZE 1000
 #define KEY_SIZE 32
@@ -15,12 +16,10 @@
 typedef struct CacheEntry{
     char key[KEY_SIZE];
     char value[VALUE_SIZE];
-    // struct CacheEntry *next;
 }CacheEntry;
 
 
 // define a structure for cache
-
 typedef struct Cache{
    CacheEntry *items[CACHE_SIZE];
    int curr_size;
@@ -28,7 +27,6 @@ typedef struct Cache{
 
 
 //initialize cache  
-
 void init(Cache *cache)
 {
     for(int i=0;i<CACHE_SIZE;i++)
@@ -37,19 +35,6 @@ void init(Cache *cache)
     }
     cache->curr_size=0;
 }
-
-// DJB2 Hash function to ensure uniform distribution & reduce collision.
-// Hashing -> to compute the index for a given key
-unsigned int hash(const char* key)
-{
-   unsigned int hash=0;
-   while(*key)
-   {
-     hash=(hash<<5)+hash + *key++ ;
-   }
-   return (hash%CACHE_SIZE);
-}
-
 
 // function to add an entry to  cache 
 void add_to_cache(Cache* cache,const char *key,const char *value)
@@ -77,12 +62,9 @@ void add_to_cache(Cache* cache,const char *key,const char *value)
     newentry->key[KEY_SIZE-1]='\0';
     strncpy(newentry->value,value,VALUE_SIZE-1);
     newentry->value[VALUE_SIZE-1]='\0';
-    // newentry->next=cache->items[index];
     cache->items[index]=newentry;
-
     cache->curr_size++;
 }
-
 
 // function to retrieve an entry from the cache
 const char* retrieve_from_cache(Cache *cache,const char *key)
@@ -108,16 +90,7 @@ void free_cache(Cache *cache)
         }
     }
 }
-// function to trim newline character from the key and value for clean output
-void trim_newline(char *str)
-{
-	char *pos;
-	if((pos= strchr(str,'\n'))!= NULL)
-	{
-		*pos='\0';
-	}
-}
-
+// function to print all the cache entries
 void print_cache(Cache *cache)
 {
    printf("Keys             Values\n");
@@ -164,38 +137,22 @@ void test_cache()
         snprintf(s,KEY_SIZE,"%d",key);
         const char *value = retrieve_from_cache(&cache, s);
         if (value) 
-        {
             hit++;
-        }
         else
-        {
             miss++;
-        }
     }
     print_cache(&cache);
-    double hit_ratio=0.0;
-    double miss_ratio=0.0;
-    hit_ratio=(double)hit/500*100;
-    miss_ratio=(100.0-hit_ratio);
+    metric(hit,miss);
 
-    end=clock();
     double diff= (double)(end-start)/(CLOCKS_PER_SEC);
     getrusage(RUSAGE_SELF, &usage_end);
     long mem_used = usage_end.ru_maxrss - usage_start.ru_maxrss;
 
-    // Print metrics in tabular format
-    printf("\nCache Metrics:\n");
-    printf("-------------------------------------------------\n");
-    printf("| %-30s | %d                    |\n", "Total number of cache hits", hit);
-    printf("| %-30s | %d                    |\n", "Total number of cache miss", miss);
-    printf("| %-30s | %.2f%%                |\n", "Hit ratio", hit_ratio);
-    printf("| %-30s | %.2f%%                |\n", "Miss ratio", miss_ratio);
     printf("| %-30s | %f seconds         |\n", "Time utilized", diff);
     printf("| %-30s | %ld KB             |\n", "Memory Used", mem_used);
     printf("-------------------------------------------------\n");
 
     free_cache(&cache);
-
 }
 
 int main()

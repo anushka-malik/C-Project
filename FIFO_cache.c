@@ -3,6 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include <sys/resource.h>
+#include "cache.h"
 
 #define CACHE_SIZE 2000
 #define KEY_SIZE 32
@@ -11,16 +12,14 @@
 #define ENDEC_KEY 3
 
 // define a structure for cache entry
-
 typedef struct CacheEntry{
     char key[KEY_SIZE];
     char value[VALUE_SIZE];
-    struct CacheEntry *next;
+    // struct CacheEntry *next;
 }CacheEntry;
 
 
 // define a queue linked list with front and rear pointers to maintain the FIFO order
-
 typedef struct QueueNode{
    CacheEntry *entry;
    struct QueueNode *next;
@@ -50,17 +49,6 @@ void init(Cache *cache)
     cache->size=0;
 }
 
-// DJB2 Hash function to ensure uniform distribution & reduce collision.
-// Hashing -> to compute the index for a given key
-unsigned int hash(const char* key)
-{
-   unsigned int hash=0;
-   while(*key)
-   {
-     hash=(hash<<5)+hash + *key++ ;
-   }
-   return (hash%CACHE_SIZE);
-}
 
 //function to create a new queue node
 
@@ -84,15 +72,11 @@ void add_to_cache(Cache *cache,const char *key,const char *value)
     CacheEntry *entry=cache->items[index];
    
     // checks if key already exists and update the value if found
-    while(entry!=NULL)
+    if(entry!=NULL)
     {
-        if(strcmp(entry->key,key)==0)
-        {
             strncpy(entry->value, value, VALUE_SIZE - 1);
             entry->value[VALUE_SIZE-1]='\0';
             return ;
-        }
-        entry=entry->next;
     }
 
     // if key not found, create a new entry
@@ -107,7 +91,6 @@ void add_to_cache(Cache *cache,const char *key,const char *value)
     newentry->key[KEY_SIZE-1]='\0';
     strncpy(newentry->value,value,VALUE_SIZE-1);
     newentry->value[VALUE_SIZE-1]='\0';
-    newentry->next=cache->items[index];
     cache->items[index]=newentry;
  
    // Simultaneously , add the entry to queue as well
@@ -137,20 +120,12 @@ void add_to_cache(Cache *cache,const char *key,const char *value)
      CacheEntry *current=cache->items[index];
      CacheEntry *prev=NULL;
 
-     while(current !=NULL)
+     if(current !=NULL)
      {
-        if(strcmp(current->key,old_item->entry->key)==0)
-        {
             if(prev==NULL)
-             cache->items[index]=current->next;
-            else
-             prev->next=current->next;
-
+             cache->items[index]=current;
+            
             free(current);
-            break;
-        }
-        prev=current;
-        current=current->next;
      }
 
      free(old_item);
@@ -163,29 +138,15 @@ const char* retrieve_from_cache(Cache *cache,const char *key)
     unsigned int index=hash(key);
     CacheEntry *entry=cache->items[index];
 
-    while(entry!=NULL)
+    if(entry!=NULL)
     {
-        if(strcmp(entry->key,key)==0)
-        {
-            return entry->value;
-        }
-        entry=entry->next;
+        return entry->value;
     }
 
     //key not found in cache 
     return NULL;
 }
 
-// function to trim newline character from the key and value for clean output
-
-void trim_newline(char *str)
-{
-	char *pos;
-	if((pos= strchr(str,'\n'))!= NULL)
-	{
-		*pos='\0';
-	}
-}
 
 // function to free the memory allocated -> memory deallocation
 void free_cache(Cache *cache)
@@ -193,11 +154,9 @@ void free_cache(Cache *cache)
      for (int i = 0; i < CACHE_SIZE; i++) 
      {
         CacheEntry *entry = cache->items[i];
-        while (entry != NULL)
+        if (entry != NULL)
         {
-            CacheEntry *temp = entry;
-            entry = entry->next;
-            free(temp);
+            free(entry);
         }
     }
 
@@ -207,43 +166,6 @@ void free_cache(Cache *cache)
         cache->front = cache->front->next;
         free(temp);
     }
-}
-
-// function which calcluates encrypted key-value pairs using Caesar Cipher encryption algorithm 
-void custom_encrypt(char *str)
-{
-   char ch;
-   for(int i=0;str[i]!='\0';i++)
-   {
-      ch=str[i];
-      if(ch>='a'  && ch<='z')
-      {
-          ch=ch+ENDEC_KEY;
-          if(ch>'z')
-          {
-            ch=ch-'z'+'a'-1;
-          }
-          str[i]=ch;
-      }
-      else if(ch>='A' && ch<='Z')
-      {
-          ch=ch+ENDEC_KEY;
-          if(ch>'Z')
-          {
-            ch=ch-'Z'+'A'-1;
-          }
-          str[i]=ch;
-      }
-      else
-      {
-        ch=ch+ENDEC_KEY;
-        if(ch>'9')
-        {
-            ch=ch-'9'+'0'-1;
-        }
-        str[i]=ch;
-      }
-   }
 }
 
 // Encrypt funciton which encrypts  each entry in the cache 
@@ -256,42 +178,6 @@ void encrypt(Cache *cache)
     custom_encrypt(temp->entry->value);
     temp=temp->next;
   }
-}
-// function which calcluates decrypted key-value pairs using Caesar Cipher decryption algorithm 
-void custom_decrypt(char *str)
-{
-   char ch;
-   for(int i=0;str[i]!='\0';i++)
-   {
-      ch=str[i];
-      if(ch>='a'  && ch<='z')
-      {
-          ch=ch-ENDEC_KEY;
-          if(ch<'a')
-          {
-            ch=ch-'a'+'z'+1;
-          }
-          str[i]=ch;
-      }
-      else if(ch>='A' && ch<='Z')
-      {
-          ch=ch-ENDEC_KEY;
-          if(ch<'A')
-          {
-            ch=ch-'A'+'Z'+1;
-          }
-          str[i]=ch;
-      }
-      else
-      {
-        ch=ch-ENDEC_KEY;
-        if(ch<'0')
-        {
-            ch=ch-'0'+'9'+1;
-        }
-        str[i]=ch;
-      }
-   }
 }
 
 // Decrypt funciton which decrypts  each entry in the cache 
@@ -336,7 +222,7 @@ void test_cache()
 
     for(int i=0;i<5;i++)
     {
-         char k[KEY_SIZE];
+        char k[KEY_SIZE];
         int el=(rand()%(hi-lo+1))+lo;
         snprintf(k, KEY_SIZE, "%d", el);
         trim_newline(k);
@@ -370,31 +256,16 @@ void test_cache()
     printf("After decryption: \n");
     print_func(&cache);
     
-    
-    double hit_ratio=0.0;
-    double miss_ratio=0.0;
-    hit_ratio=(double)hit/500*100;
-    miss_ratio=(100.0-hit_ratio);
-
     end=clock();
     double diff= (double)(end-start)/(CLOCKS_PER_SEC);
     
+    metric(hit,miss);
     getrusage(RUSAGE_SELF,&usage_end);
     long mem_used=usage_end.ru_maxrss -  usage_start.ru_maxrss;
-    
-     // Print metrics in tabular format
-    printf("\nCache Metrics:\n");
-    printf("-------------------------------------------------\n");
-    printf("| %-30s | %d                    |\n", "Total number of cache hits", hit);
-    printf("| %-30s | %d                    |\n", "Total number of cache miss", miss);
-    printf("| %-30s | %.2f%%                |\n", "Hit ratio", hit_ratio);
-    printf("| %-30s | %.2f%%                |\n", "Miss ratio", miss_ratio);
+        
     printf("| %-30s | %f seconds         |\n", "Time utilized", diff);
-    // printf("| %-30s | %ld KB             |\n", "Memory Used", mem_used);
+    printf("| %-30s | %ld KB             |\n", "Memory Used", mem_used);
     printf("-------------------------------------------------\n");
-
-
-    
     free_cache(&cache);
 
 }
