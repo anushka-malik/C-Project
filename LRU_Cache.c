@@ -6,8 +6,10 @@
 
 #define KEY_SIZE 32
 #define VALUE_SIZE 256
-#define CACHE_SIZE 1000
-#define CACHE_CAPACITY 3
+#define CACHE_SIZE 2000
+#define CACHE_CAPACITY 5
+#define ENDEC_KEY 3
+
 
 typedef struct CacheEntry {
     char key[KEY_SIZE];
@@ -116,22 +118,6 @@ const char *retrieve_from_cache(Cache *cache, const char *key) {
     return NULL;
 }
 
-void trim_newline(char *str) {
-    char *pos;
-    if ((pos = strchr(str, '\n')) != NULL) {
-        *pos = '\0';
-    }
-}
-
-void print_cache(Cache *cache) {
-    CacheEntry *temp = cache->head;
-    while (temp) {
-        printf("Key: %s has Value: %s\n", temp->key, temp->value);
-        temp = temp->next;
-    }
-    printf("\n");
-}
-
 void free_memory(Cache *cache) {
     CacheEntry *temp = cache->head;
     while (temp) {
@@ -144,6 +130,123 @@ void free_memory(Cache *cache) {
         temp = next;
     }
 }
+
+void trim_newline(char *str) {
+    char *pos;
+    if ((pos = strchr(str, '\n')) != NULL) {
+        *pos = '\0';
+    }
+}
+
+// function which calcluates encrypted key-value pairs using Caesar Cipher encryption algorithm 
+void custom_encrypt(char *str)
+{
+   char ch;
+   for(int i=0;str[i]!='\0';i++)
+   {
+      ch=str[i];
+      if(ch>='a'  && ch<='z')
+      {
+          ch=ch+ENDEC_KEY;
+          if(ch>'z')
+          {
+            ch=ch-'z'+'a'-1;
+          }
+          str[i]=ch;
+      }
+      else if(ch>='A' && ch<='Z')
+      {
+          ch=ch+ENDEC_KEY;
+          if(ch>'Z')
+          {
+            ch=ch-'Z'+'A'-1;
+          }
+          str[i]=ch;
+      }
+      else
+      {
+        ch=ch+ENDEC_KEY;
+        if(ch>'9')
+        {
+            ch=ch-'9'+'0'-1;
+        }
+        str[i]=ch;
+      }
+   }
+}
+
+// Encrypt funciton which encrypts  each entry in the cache 
+void encrypt(Cache *cache)
+{
+  CacheEntry *temp=cache->head;
+  while(temp)
+  {
+    custom_encrypt(temp->key);
+    custom_encrypt(temp->value);
+    temp=temp->next;
+  }
+}
+// function which calcluates decrypted key-value pairs using Caesar Cipher decryption algorithm 
+void custom_decrypt(char *str)
+{
+   char ch;
+   for(int i=0;str[i]!='\0';i++)
+   {
+      ch=str[i];
+      if(ch>='a'  && ch<='z')
+      {
+          ch=ch-ENDEC_KEY;
+          if(ch<'a')
+          {
+            ch=ch-'a'+'z'+1;
+          }
+          str[i]=ch;
+      }
+      else if(ch>='A' && ch<='Z')
+      {
+          ch=ch-ENDEC_KEY;
+          if(ch<'A')
+          {
+            ch=ch-'A'+'Z'+1;
+          }
+          str[i]=ch;
+      }
+      else
+      {
+        ch=ch-ENDEC_KEY;
+        if(ch<'0')
+        {
+            ch=ch-'0'+'9'+1;
+        }
+        str[i]=ch;
+      }
+   }
+}
+
+// Decrypt funciton which decrypts  each entry in the cache 
+void decrypt(Cache *cache)
+{
+  CacheEntry *temp=cache->head;
+  while(temp)
+  {
+    custom_decrypt(temp->key);
+    custom_decrypt(temp->value);
+    temp=temp->next;
+  }
+}
+
+// function to print all the entries of the cache
+void print_func(Cache *cache)
+{
+    CacheEntry *temp=cache->head;
+    while(temp)
+    {
+         printf("Key: %s and Value: %s\n",temp->key,temp->value);
+         temp=temp->next;
+    }
+    printf("\n");
+}
+
 
 void test() {
     clock_t start, end;
@@ -159,7 +262,7 @@ void test() {
     int miss = 0;
     int hit = 0;
 
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 5; i++) {
         char k[KEY_SIZE];
         int el = (rand() % (hi - lo + 1)) + lo;
         snprintf(k, KEY_SIZE, "%d", el);
@@ -170,7 +273,7 @@ void test() {
         add_to_cache(&cache, k, v);
     }
 
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 1000; i++) {
         int key = (rand() % (hi - lo + 1)) + lo;
         char s[KEY_SIZE];
         snprintf(s, KEY_SIZE, "%d", key);
@@ -181,12 +284,21 @@ void test() {
             miss++;
         }
     }
-
-    double hit_ratio = (double)hit / 12 * 100;
+    printf("Before encryption: \n");
+    print_func(&cache);
+    encrypt(&cache);
+    printf("After encryption: \n");
+    print_func(&cache);
+    decrypt(&cache);
+    printf("After decryption: \n");
+    print_func(&cache);
+    
+    double hit_ratio = (double)hit / 1000* 100;
     double miss_ratio = 100.0 - hit_ratio;
 
     end = clock();
     double diff = (double)(end - start) / CLOCKS_PER_SEC;
+
 
     getrusage(RUSAGE_SELF, &usage_end);
     long mem_used = usage_end.ru_maxrss - usage_start.ru_maxrss;
